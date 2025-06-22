@@ -1,0 +1,49 @@
+<br><div style="position: relative; padding-top: 56.25%; height: 0; overflow: hidden;">
+  <iframe srcdoc='
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <style>
+          html, body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            height: 100%;
+            width: 100%;
+          }
+          #player {
+            width: 100%;
+            height: 100%;
+          }
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/shaka-player@4.3.5/dist/shaka-player.compiled.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/dash-shaka-playback@latest/dist/dash-shaka-playback.min.js"></script>
+      </head>
+      <body>
+    <div id="player"></div>
+
+    <script>
+      const player = new Clappr.Player({
+        parentId: "#player",
+        plugins: [DashShakaPlayback],
+        source: "https://cdn.cvattv.com.ar/live/c6eds/Eurochannel/SA_Live_dash_enc/Eurochannel.mpd",
+        shakaConfiguration: {
+          drm: {
+            clearKeys: {
+              "6f0fc214d9844a7590f0884d55b44c42": "b2fe1bb5f9c79035301c328c1e93b0ee"
+            }
+              }
+            },
+            autoPlay: true,
+            mute: false,
+            width: "100%",
+            height: "100%",
+          });
+        </script>
+      </body>
+    </html>' 
+    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
+    allowfullscreen>
+  </iframe>

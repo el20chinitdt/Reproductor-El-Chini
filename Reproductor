@@ -1,49 +1,94 @@
-<br><div style="position: relative; padding-top: 56.25%; height: 0; overflow: hidden;">
-  <iframe srcdoc='
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <style>
-          html, body {
-            margin: 0;
-            padding: 0;
-            background: #000;
-            height: 100%;
-            width: 100%;
-          }
-          #player {
-            width: 100%;
-            height: 100%;
-          }
-        </style>
-        <script src="https://cdn.jsdelivr.net/npm/shaka-player@4.3.5/dist/shaka-player.compiled.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/dash-shaka-playback@latest/dist/dash-shaka-playback.min.js"></script>
-      </head>
-      <body>
-    <div id="player"></div>
+<!-- Contenedor para Blogger 16:9 -->
+<div style="width:100%; max-width:800px; position:relative; padding-top:56.25%; margin:auto; background:black;">
+  <div id="player" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
+</div>
 
-    <script>
-      const player = new Clappr.Player({
-        parentId: "#player",
-        plugins: [DashShakaPlayback],
-        source: "https://cdn.cvattv.com.ar/live/c6eds/Eurochannel/SA_Live_dash_enc/Eurochannel.mpd",
-        shakaConfiguration: {
-          drm: {
-            clearKeys: {
-              "6f0fc214d9844a7590f0884d55b44c42": "b2fe1bb5f9c79035301c328c1e93b0ee"
-            }
-              }
-            },
-            autoPlay: true,
-            mute: false,
-            width: "100%",
-            height: "100%",
-          });
-        </script>
-      </body>
-    </html>' 
-    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
-    allowfullscreen>
-  </iframe>
+<!-- Clappr actualizado + Shaka -->
+<script src="https://cdn.jsdelivr.net/npm/@clappr/player@latest/dist/clappr.plainhtml5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dash-shaka-playback@latest/dist/dash-shaka-playback.min.js"></script>
+
+<script>
+  var player = new Clappr.Player({
+    parentId: "#player",
+    source: "https://cdn.cvattv.com.ar/live/c3eds/Canal7_Bahia_Blanca/SA_Live_dash_enc_C/Canal7_Bahia_Blanca.mpd", // reemplazá con tu MPD real
+    autoPlay: true,
+    width: "100%",
+    height: "100%",
+    plugins: [DashShakaPlayback],
+    shakaConfiguration: {
+      streaming: {
+        rebufferToLiveThreshold: 2
+      },
+      drm: {
+        clearKeys: {
+          "a15243320c0a79defa8814252e3e8c07": "0659db05632c0061c126db7a12582499"
+        }
+      }
+    }
+  });
+
+  // =============================
+  // BLOQUE MODIFICADO SIN DVR
+  // =============================
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isSmartTV = /SmartTV|Tizen|Web0S|SmartHub|Chromecast/i.test(navigator.userAgent);
+
+  // Audio Boost
+  if (!isSmartTV) {
+    player.on("play", function () {
+      const video = document.querySelector("#player video");
+      if (video && !video.audioBoostApplied) {
+        try {
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const source = audioCtx.createMediaElementSource(video);
+          const gain = audioCtx.createGain();
+          gain.gain.value = 2;
+          source.connect(gain);
+          gain.connect(audioCtx.destination);
+          video.muted = false;
+          video.volume = 1.0;
+          video.audioBoostApplied = true;
+        } catch(e) { console.warn("Audio boost no disponible:", e); }
+      }
+    });
+  }
+
+  // SmartTV fallback
+  if (isSmartTV) {
+    player.on("ready", function () {
+      const video = document.querySelector("#player video");
+      if (video) { video.muted = false; try { video.volume = 1.0; } catch(e){} }
+    });
+  }
+
+  // Auto selección de audio
+  const lang = 1;
+  player.on("play", () => player.setCurrentAudioTrack(lang));
+
+  // ROTACIÓN AUTOMÁTICA
+  player.on("fullscreen", function(e) {
+    const contenedor = document.getElementById("player");
+
+    if (!isIOS && screen.orientation) {
+      if (e.fullscreen) {
+        const tryLock = async () => {
+          try { await screen.orientation.lock("landscape"); }
+          catch(err) { setTimeout(tryLock, 200); }
+        };
+        tryLock();
+      } else {
+        try { screen.orientation.unlock(); } catch(err) {}
+      }
+    }
+
+    if (isIOS) {
+      if (e.fullscreen) contenedor.classList.add("ios-landscape");
+      else contenedor.classList.remove("ios-landscape");
+    }
+  });
+
+  // Baja de calidad si hay buffering
+  player.on("buffer", function() {
+    try { player.setCurrentQuality(0); } catch(e){}
+  });
+</script>
